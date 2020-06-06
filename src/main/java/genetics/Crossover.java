@@ -40,6 +40,9 @@ public final class Crossover {
         }
 
         /*Add last sequence without duplicate*/
+        if (p1Nodes.size() != p2Nodes.size()) {
+            System.err.println("err");
+        }
         for(int i = 0; i < p1Nodes.size(); i++) {
             p1Nodei = p1Nodes.get(i);
             p2Nodei = p2Nodes.get(i);

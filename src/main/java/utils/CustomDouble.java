@@ -12,4 +12,9 @@ public class CustomDouble implements graph.Cloneable{
     public CustomDouble clone() {
         return new CustomDouble(value);
     }
+
+    @Override
+    public String toString() {
+        return ""+value;
+    }
 }

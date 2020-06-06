@@ -60,6 +60,8 @@ public class DeliveryTour implements Serializable, Cloneable {
 
     public double getTotalDistance() { return _tour.getTotalDistance(); }
 
+    public void orderNodes() { _tour.orderNodes(); }
+
     @Override
     public String toString() {
         return "Remaining capacity : " + remainingSpace() + "\nDistance : " + FormatUtils.round(_tour.getTotalDistance(),2) + "\nCalculated distance : " + FormatUtils.round(_tour.calculateTotalDistance(),2) + "\n" + _tour.toString() + "\n\n";

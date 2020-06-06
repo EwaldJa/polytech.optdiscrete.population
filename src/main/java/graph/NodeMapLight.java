@@ -360,4 +360,25 @@ public class NodeMapLight implements Serializable {
     public int getSize() {
         return _tour.size();
     }
+
+    public void orderNodes() {
+        List<Node> newTour = new ArrayList<>();
+        List<Node> tourClone = new ArrayList<>(_tour);
+        Node currNode = _deposit, bestNode;
+        double currDist, bestDist;
+        while(newTour.size() != _tour.size()) {
+            bestNode = null;
+            bestDist = Double.POSITIVE_INFINITY;
+            for(Node n:tourClone) {
+                currDist = currNode.getDistance(n);
+                if(currDist < bestDist) {
+                    bestDist = currDist;
+                    bestNode = n; } }
+            newTour.add(bestNode);
+            tourClone.remove(bestNode);
+            currNode = bestNode;
+        }
+        this._tour = newTour;
+        this._totalDistance = calculateTotalDistance();
+    }
 }

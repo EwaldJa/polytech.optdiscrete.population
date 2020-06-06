@@ -61,7 +61,9 @@ public class Solution implements Serializable, Cloneable {
         DeliveryTour dt = new DeliveryTour(_deposit);
         for (Node client:_clients) {
             if (client.getOrder() > dt.remainingSpace()) {
+                dt.orderNodes();
                 _deliveryTours.add(dt);
+                //TODO : créer une méthode dans DT pour les reorder après l'ajout de tous les clients
                 dt = new DeliveryTour(_deposit); }
             dt.append(client);
         }
@@ -267,13 +269,17 @@ public class Solution implements Serializable, Cloneable {
     }
 
     /**
-     * @return a List of Nodes representing the clients ordered by DelyveryTour
+     * @return a List of Nodes representing the clients ordered by DeliveryTour
      */
     public List<Node> getFlattenedOrderedClients() {
         List<Node> clients = new ArrayList<>();
         for(DeliveryTour dt:_deliveryTours) {
-            List<Node> dtNodes = dt.getNodes();
-            dtNodes.remove(0); //Remove deposit
+            List<Node> dtNodes = new ArrayList<>();
+            dtNodes.addAll(dt.getNodes());
+            boolean removed = dtNodes.remove(_deposit); //Remove deposit
+            if (!removed) {
+                System.err.println("err not removed");
+            }
             clients.addAll(dtNodes);
         }
         return clients;
