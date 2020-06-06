@@ -17,7 +17,7 @@ import java.util.List;
  */
 public class DeliveryTour implements Serializable, Cloneable {
 
-    public static final int MAX_CAPACITY = 100, MAX_CAPACITY_INIT = 60;
+    public static final int MAX_CAPACITY = 100, MAX_CAPACITY_INIT = 90;
 
     private NodeMapLight _tour;
 

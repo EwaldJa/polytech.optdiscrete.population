@@ -27,9 +27,10 @@ public class Solution implements Serializable, Cloneable {
     private Solution() {}
 
     /**
-     * Constructs a Solution with randomly filled DeliveryTours (max 60% of their capacity)
+     * Constructs a Solution with randomly filled DeliveryTours (max <b>DeliveryTour.MAX_CAPACITY_INIT</b>% of their capacity)
      * @param deposit the origin Node of all deliveries, the deposit with the orders
      * @param clients all the Nodes instanciated
+     * @see DeliveryTour#MAX_CAPACITY_INIT
      */
     public Solution(Node deposit, List<Node> clients) {
         _deposit = deposit;
@@ -41,6 +42,25 @@ public class Solution implements Serializable, Cloneable {
         DeliveryTour dt = new DeliveryTour(_deposit);
         for(Node client:_clients) {
             if (client.getOrder() > dt.remainingSpaceInit()) {
+                _deliveryTours.add(dt);
+                dt = new DeliveryTour(_deposit); }
+            dt.append(client);
+        }
+        _deliveryTours.add(dt);
+    }
+
+    /**
+     * Constructs a Solution with DeliveryTours by taking the clients in order (max 100% of their capacity)
+     * @param orderedClients ordered list of Node clients
+     * @param deposit the origin Node of all deliveries, the deposit with the orders
+     */
+    public Solution(List<Node> orderedClients, Node deposit) {
+        _deposit = deposit;
+        _clients = orderedClients;
+        _deliveryTours = new ArrayList<>();
+        DeliveryTour dt = new DeliveryTour(_deposit);
+        for (Node client:_clients) {
+            if (client.getOrder() > dt.remainingSpace()) {
                 _deliveryTours.add(dt);
                 dt = new DeliveryTour(_deposit); }
             dt.append(client);
@@ -246,4 +266,23 @@ public class Solution implements Serializable, Cloneable {
                 _deliveryTours.equals(other._deliveryTours);
     }
 
+    /**
+     * @return a List of Nodes representing the clients ordered by DelyveryTour
+     */
+    public List<Node> getFlattenedOrderedClients() {
+        List<Node> clients = new ArrayList<>();
+        for(DeliveryTour dt:_deliveryTours) {
+            List<Node> dtNodes = dt.getNodes();
+            dtNodes.remove(0); //Remove deposit
+            clients.addAll(dtNodes);
+        }
+        return clients;
+    }
+
+    /**
+     * @return the List of Nodes representing all the clients in random order
+     */
+    public List<Node> getClients() {
+        return _clients;
+    }
 }
