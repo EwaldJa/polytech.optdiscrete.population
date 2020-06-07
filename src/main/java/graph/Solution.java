@@ -274,8 +274,7 @@ public class Solution implements Serializable, Cloneable {
     public List<Node> getFlattenedOrderedClients() {
         List<Node> clients = new ArrayList<>();
         for(DeliveryTour dt:_deliveryTours) {
-            List<Node> dtNodes = new ArrayList<>();
-            dtNodes.addAll(dt.getNodes());
+            List<Node> dtNodes = new ArrayList<>(dt.getNodes());
             boolean removed = dtNodes.remove(_deposit); //Remove deposit
             if (!removed) {
                 System.err.println("err not removed");

@@ -10,16 +10,16 @@ public class Application {
     public static void main(String[] args) {
 
 
-        Solution s3305 = DataLoader.read("3305");
-        System.out.println(s3305.toString());
+        Solution readFromFile = DataLoader.read("8010");
+        System.out.println(readFromFile.toString());
         SwingUtilities.invokeLater(new Runnable() {
             @Override
             public void run() {
-                new DisplayResult(s3305);  // Let the constructor do the job
+                new DisplayResult(readFromFile);  // Let the constructor do the job
             }
         });
 
-        Solution geneticAlgo = new GeneticAlgo(s3305, 20, 300000, 0.20, false).process();
+        Solution geneticAlgo = new GeneticAlgo(readFromFile, 20, 500, 0.20, 20, 25, 5).process();
         System.out.println(geneticAlgo.toString());
         SwingUtilities.invokeLater(new Runnable() {
             @Override

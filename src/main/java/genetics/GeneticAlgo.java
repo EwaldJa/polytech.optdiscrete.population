@@ -11,28 +11,25 @@ import java.util.List;
 
 public class GeneticAlgo {
 
-    private int POPULATION_SIZE, GENERATIONS_NB;
+    private int POPULATION_SIZE, GENERATIONS_NB, DESCENT_DEPTH, DESCENT_FREQ, GEN_DISPLAY_FREQ;
     private double PROBA_MUTATION;
-    private boolean LOOK_FOR_LOCAL_BEST;
 
     private List<Couple<Solution, CustomDouble>> _population;
 
     private Solution _bestSolution;
     private double _bestDistance;
 
-    private final int ITER_DESC_CROSS = 1;
-    private final int ITER_DESC_MUT = 1;
-    private final int PROFONDEUR = 50;
-    private int currIterCross = 0;
-    private int currIterMut = 0;
+    private int genIndex = 0;
 
 
-    public GeneticAlgo(Solution file, int populationSize, int generationsNb, double probaMutation, boolean lookForLocalBest) {
+    public GeneticAlgo(Solution file, int populationSize, int generationsNb, double probaMutation, int descentDepth, int descentFreq, int genDisplayFreq) {
         this._population = new ArrayList<>();
         this.POPULATION_SIZE = populationSize;
         this.GENERATIONS_NB = generationsNb;
         this.PROBA_MUTATION = probaMutation;
-        this.LOOK_FOR_LOCAL_BEST = lookForLocalBest;
+        this.DESCENT_DEPTH = descentDepth;
+        this.DESCENT_FREQ = descentFreq;
+        this.GEN_DISPLAY_FREQ = genDisplayFreq;
         this._bestSolution = file;
         this._bestDistance = file.getTotalDistance();
         _population.add(new Couple<>(file, new CustomDouble(1/file.getTotalDistance())));
@@ -44,14 +41,18 @@ public class GeneticAlgo {
     }
 
     public Solution process() {
-        for(int genIndex = 0; genIndex < GENERATIONS_NB; genIndex++) {
+        for(genIndex = 0; genIndex < GENERATIONS_NB; genIndex++) {
+            if ((DESCENT_DEPTH > 0) && ((genIndex % DESCENT_FREQ) == 0)) {
+                System.out.println("\nGeneration : " + genIndex + ", best distance : " + FormatUtils.round(_bestDistance, 2) + ", proceed to descent with max depth : " + DESCENT_DEPTH); }
+            else if ((genIndex % GEN_DISPLAY_FREQ) == 0) {
+                if (DESCENT_DEPTH > 0) { System.out.print("\n"); }
+                System.out.print("\rGeneration : " + genIndex + ", best distance : " + FormatUtils.round(_bestDistance, 2)); }
             selectPopulation();
             doCrossover();
             doMutation();
             updateValues();
-            if (genIndex % 10000 == 0) {
-                System.out.println("Generation : " + genIndex + ", best distance : " + FormatUtils.round(_bestDistance, 2)); }
         }
+        System.out.println("\n\nBest score : " + _bestDistance);
         return _bestSolution;
     }
 
@@ -81,27 +82,18 @@ public class GeneticAlgo {
 
     private void doCrossover() {
         List<Couple<Solution, CustomDouble>> childs = new ArrayList<>();
-        for(int i = 0; i < POPULATION_SIZE; i += 2) {
+        for(int i = 0; i < POPULATION_SIZE - 1; i += 2) {
             Crossover.doCrossover(_population.get(i).getKey(), _population.get(i + 1).getKey()).forEach(solution -> childs.add(new Couple<>(solution, new CustomDouble(1/solution.getTotalDistance()))));
         }
         if (POPULATION_SIZE%2 == 1) {
-            Crossover.doCrossover(_population.get(POPULATION_SIZE - 1).getKey(), _population.get(RandUtils.randInt(0, POPULATION_SIZE - 1)).getKey()).forEach(solution -> childs.add(new Couple<>(solution, new CustomDouble(1/solution.getTotalDistance()))));
+            Solution firstChildSolution = Crossover.doCrossover(_population.get(POPULATION_SIZE - 1).getKey(), _population.get(RandUtils.randInt(0, POPULATION_SIZE - 1)).getKey()).get(0);
+            childs.add(new Couple<>(firstChildSolution, new CustomDouble(1/firstChildSolution.getTotalDistance()))); /*First child because he has more parts of first parent*/
         }
-        if (LOOK_FOR_LOCAL_BEST && currIterCross == ITER_DESC_CROSS) {
-            for(Couple<Solution, CustomDouble> child:childs) {
-                child.setKey(getLocalBest(child.getKey()));
-                child.getValue().value = (1/child.getKey().getTotalDistance());
-            }
-            currIterCross = 0;
-        }
-        else
-            currIterCross++;
         _population = childs;
     }
 
     private void doMutation() {
         double dist;
-        List<Couple<Solution, CustomDouble>> childs = new ArrayList<>(_population);
         for(Couple<Solution, CustomDouble> couple:_population) {
             dist = couple.getKey().getTotalDistance();
             if(dist < _bestDistance) {
@@ -112,15 +104,7 @@ public class GeneticAlgo {
                 couple.setKey(couple.getKey().cloneRandom());
             }
         }
-        if(LOOK_FOR_LOCAL_BEST && currIterMut == ITER_DESC_MUT){
-            for(Couple<Solution, CustomDouble> child:childs) {
-                child.setKey(getLocalBest(child.getKey()));
-                child.getValue().value = (1/child.getKey().getTotalDistance());
-            }
-            currIterMut = 0;
-        }
-        else
-            currIterMut++;
+        if(DESCENT_DEPTH > 0 && (genIndex % DESCENT_FREQ) == 0){ doDescent(); }
     }
 
     private void updateValues() {
@@ -142,17 +126,29 @@ public class GeneticAlgo {
         }
     }
 
+    private void doDescent() {
+        System.out.println("    ---");
+        List<Couple<Solution, CustomDouble>> childs = new ArrayList<>(_population);
+        childs.parallelStream().forEach(couple -> {couple.setKey(getLocalBest(couple.getKey())); /*Descentes en parallele pour chaque element de la population, gain de performance : execution plus rapide de POPULATION_SIZE fois*/
+            couple.getValue().value = (1/couple.getKey().getTotalDistance());});
+        System.out.println("    ---");
+        _population = childs;
+    }
+
     private Solution getLocalBest(Solution s) {
         List<Solution> emptyTabu = new ArrayList<>();
         Solution bestNeighbour = s.getBestNeighbour(emptyTabu), lastNghb=s;
         double nghbDist = bestNeighbour.getTotalDistance(), lastDist = s.getTotalDistance();
         int i = 0;
-        while (nghbDist < lastDist && i < PROFONDEUR) {
+        while (nghbDist < lastDist && i < DESCENT_DEPTH) {
             lastDist = nghbDist;
             lastNghb = bestNeighbour;
             bestNeighbour = bestNeighbour.getBestNeighbour(emptyTabu);
+            nghbDist = bestNeighbour.getTotalDistance();
             i++;
-        }
+            System.out.print("\r    Descent #: " + i + ", nghbDist : " + FormatUtils.round(nghbDist, 2) + ", lastDist : " + FormatUtils.round(lastDist, 2)); }
+        System.out.println(" ");
+        if (nghbDist < lastDist) { return bestNeighbour; }
         return lastNghb;
     }
 
