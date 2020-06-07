@@ -10,7 +10,7 @@ public class Application {
     public static void main(String[] args) {
 
 
-        Solution s3305 = DataLoader.read("3205");
+        Solution s3305 = DataLoader.read("3305");
         System.out.println(s3305.toString());
         SwingUtilities.invokeLater(new Runnable() {
             @Override
@@ -19,7 +19,7 @@ public class Application {
             }
         });
 
-        Solution geneticAlgo = new GeneticAlgo(s3305, 20, 500, 0.05, true).process();
+        Solution geneticAlgo = new GeneticAlgo(s3305, 20, 300000, 0.20, false).process();
         System.out.println(geneticAlgo.toString());
         SwingUtilities.invokeLater(new Runnable() {
             @Override

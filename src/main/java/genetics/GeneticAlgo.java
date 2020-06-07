@@ -20,6 +20,12 @@ public class GeneticAlgo {
     private Solution _bestSolution;
     private double _bestDistance;
 
+    private final int ITER_DESC_CROSS = 1;
+    private final int ITER_DESC_MUT = 1;
+    private final int PROFONDEUR = 50;
+    private int currIterCross = 0;
+    private int currIterMut = 0;
+
 
     public GeneticAlgo(Solution file, int populationSize, int generationsNb, double probaMutation, boolean lookForLocalBest) {
         this._population = new ArrayList<>();
@@ -43,7 +49,7 @@ public class GeneticAlgo {
             doCrossover();
             doMutation();
             updateValues();
-            if (genIndex % 1 == 0) {
+            if (genIndex % 10000 == 0) {
                 System.out.println("Generation : " + genIndex + ", best distance : " + FormatUtils.round(_bestDistance, 2)); }
         }
         return _bestSolution;
@@ -81,17 +87,21 @@ public class GeneticAlgo {
         if (POPULATION_SIZE%2 == 1) {
             Crossover.doCrossover(_population.get(POPULATION_SIZE - 1).getKey(), _population.get(RandUtils.randInt(0, POPULATION_SIZE - 1)).getKey()).forEach(solution -> childs.add(new Couple<>(solution, new CustomDouble(1/solution.getTotalDistance()))));
         }
-        if (LOOK_FOR_LOCAL_BEST) {
+        if (LOOK_FOR_LOCAL_BEST && currIterCross == ITER_DESC_CROSS) {
             for(Couple<Solution, CustomDouble> child:childs) {
                 child.setKey(getLocalBest(child.getKey()));
                 child.getValue().value = (1/child.getKey().getTotalDistance());
             }
+            currIterCross = 0;
         }
+        else
+            currIterCross++;
         _population = childs;
     }
 
     private void doMutation() {
         double dist;
+        List<Couple<Solution, CustomDouble>> childs = new ArrayList<>(_population);
         for(Couple<Solution, CustomDouble> couple:_population) {
             dist = couple.getKey().getTotalDistance();
             if(dist < _bestDistance) {
@@ -102,6 +112,15 @@ public class GeneticAlgo {
                 couple.setKey(couple.getKey().cloneRandom());
             }
         }
+        if(LOOK_FOR_LOCAL_BEST && currIterMut == ITER_DESC_MUT){
+            for(Couple<Solution, CustomDouble> child:childs) {
+                child.setKey(getLocalBest(child.getKey()));
+                child.getValue().value = (1/child.getKey().getTotalDistance());
+            }
+            currIterMut = 0;
+        }
+        else
+            currIterMut++;
     }
 
     private void updateValues() {
@@ -127,10 +146,12 @@ public class GeneticAlgo {
         List<Solution> emptyTabu = new ArrayList<>();
         Solution bestNeighbour = s.getBestNeighbour(emptyTabu), lastNghb=s;
         double nghbDist = bestNeighbour.getTotalDistance(), lastDist = s.getTotalDistance();
-        while (nghbDist < lastDist) {
+        int i = 0;
+        while (nghbDist < lastDist && i < PROFONDEUR) {
             lastDist = nghbDist;
             lastNghb = bestNeighbour;
             bestNeighbour = bestNeighbour.getBestNeighbour(emptyTabu);
+            i++;
         }
         return lastNghb;
     }
